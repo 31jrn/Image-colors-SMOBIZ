@@ -75,6 +75,18 @@ def analyze_colors(img_rgb, bin_size=10):
 
     return most_freq_color, rare_color, mask_most, mask_rare, counts, (nx, ny, nz)
 
+def highlight_mask(img_rgb, mask, highlight_color=(255, 0, 0), alpha=0.7):
+    """
+    Подсвечивает пиксели по маске ярким цветом.
+    alpha — прозрачность наложения.
+    """
+    result = img_rgb.copy().astype(np.float32)
+    overlay = np.zeros_like(result)
+    overlay[:] = highlight_color
+    result[mask] = alpha * overlay[mask] + (1 - alpha) * result[mask]
+    return result.astype(np.uint8)
+
+
 def visualize_results(img_rgb, most_color, rare_color, mask_most, mask_rare, save=False, out_prefix="out"):
     """
     Показывает исходное изображение, маски и цветовые квадраты.
@@ -116,7 +128,7 @@ def visualize_results(img_rgb, most_color, rare_color, mask_most, mask_rare, sav
 
 if __name__ == "__main__":
     # Пример использования:
-    img_bgr = cv2.imread("hvoynyi_les.jpeg")
+    img_bgr = cv2.imread("depositphotos_14034535-stock-photo-forest.jpeg") # hvoynie_lesa.jpg
     if img_bgr is None:
         raise FileNotFoundError("Не удалось найти файл изображения. Проверь путь.")
     img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
@@ -133,4 +145,21 @@ if __name__ == "__main__":
     print("Число пикселей в самом редком ненулевом кубике:", counts_nonzero.min())
     print("Самый редкий цвет (центроид кубика):", rare_color)
 
-    visualize_results(img_rgb, most_color, rare_color, mask_most, mask_rare, save=False)
+    # Подсветка самых частых и редких цветов красным
+    img_most = highlight_mask(img_rgb, mask_most, highlight_color=(255, 0, 0), alpha=0.7)
+    img_most = draw_contours(img_most, mask_most, color=(255, 255, 255))  # белый контур
+
+    img_rare = highlight_mask(img_rgb, mask_rare, highlight_color=(255, 0, 0), alpha=0.7)
+    img_rare = draw_contours(img_rare, mask_rare, color=(255, 255, 255))
+
+
+    visualize_results(
+        img_rgb,
+        img_most,
+        img_rare,
+        mask_most,
+        mask_rare,
+        most_color,
+        rare_color,
+        save=False
+)
